@@ -21,17 +21,17 @@ Ensuring that contracts share the same address and code on multiple chains is a 
 However, there is a bootstrapping problem: how do you get a CREATE2 factory contract with specific address and code? There are currently three main approaches to this problem:
 
 1. Use Nick's method to randomly generate a signature for a transaction **without** [EIP-155](./eip-155.md) replay protection that deploys the CREATE2 factory. Nick's method ensures that there is no known private key for account that deploys the CREATE2 factory, meaning that the resulting contract will have deterministic address and code on all chains. This is the strategy used by [Arachnid/deterministic-deployment-proxy](https://github.com/Arachnid/deterministic-deployment-proxy), one of the most widely used CREATE2 factory contracts. However, this method comes with some downsides:
-    * It does not work on chains that only accept EIP-155 replay protected transactions
-    * It is sensitive to changes in gas parameters on the target chain since the gas price in the deployment transaction is sealed, and without a private key a new one cannot be signed
-    * Reverts due to alternative gas schedules make the CREATE2 factory no longer deployable
+   - It does not work on chains that only accept EIP-155 replay protected transactions
+   - It is sensitive to changes in gas parameters on the target chain since the gas price in the deployment transaction is sealed, and without a private key a new one cannot be signed
+   - Reverts due to alternative gas schedules make the CREATE2 factory no longer deployable
 2. Keep a carefully guarded secret key, and use it sign transactions to deploy CREATE2 factory contracts. The resulting contract will have a deterministic address and code on all chains where the first transaction of the deployer account is a CREATE2 factory deployment, which can be verified post deployment. This is the strategy used by [safe-global/safe-singleton-factory](https://github.com/safe-global/safe-singleton-factory) and [pcaversaccio/createx](https://github.com/pcaversaccio/createx). This method also has some downsides:
-    * It is permissioned - the party that holds the secret key has the ultimate say on which chains will get the CREATE2 factory deployments
-    * This requires carefully guarding a secret key, if it is exposed or lost, then deployments are no longer guaranteed on new chains
-    * If the first transaction is not a successful CREATE2 factory deployment, than it is no longer possible to have a CREATE2 factory at the common address; this can happen by human error for example
+   - It is permissioned - the party that holds the secret key has the ultimate say on which chains will get the CREATE2 factory deployments
+   - This requires carefully guarding a secret key, if it is exposed or lost, then deployments are no longer guaranteed on new chains
+   - If the first transaction is not a successful CREATE2 factory deployment, than it is no longer possible to have a CREATE2 factory at the common address; this can happen by human error for example
 3. Have popular CREATE2 deployment factories deployed on new chains by default. This is, for example, what OP Stack does as part of their [preinstalls](https://github.com/ethereum-optimism/optimism/blob/develop/packages/contracts-bedrock/src/libraries/Preinstalls.sol) including the CREATE2 factory contracts mentioned above. This ensures that the CREATE2 factory contracts have known address and code. The downsides to this are:
-    * It is not standard and not adopted by all chains
-    * It is permissioned as a chain can choose to not include a needed CREATE2 factory contract preinstalled.
-    * Attempts to standardize this with [RIP-7740](https://github.com/ethereum/RIPs/blob/master/RIPS/rip-7740.md) have not been successful.
+   - It is not standard and not adopted by all chains
+   - It is permissioned as a chain can choose to not include a needed CREATE2 factory contract preinstalled.
+   - Attempts to standardize this with [RIP-7740](https://github.com/ethereum/RIPs/blob/master/RIPS/rip-7740.md) have not been successful.
 
 This ERC proposes a permissionless alternative to the mechanisms described above with none of their downsides, and standardizes a set of deployment parameters for a unique CREATE2 factory deployment. This ensures a common CREATE2 factory deployment, instead of having multiple competing copies at different addresses. This single copy can be used to bootstrap additional deterministic deployment infrastructure (such as the comprehensive CreateX universal contract deployer).
 
@@ -58,10 +58,10 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 ### Definitions
 
-* **Deployer**: The account corresponding to `DEPLOYER_PRIVATE_KEY` with address `DEPLOYER_ADDRESS`.
-* **CREATE2 factory contract**: A contract that deploys other contracts with `CREATE2 (0xf5)` opcode, allowing smart contracts to be deployed to deterministic addresses.
-* **Bootstrap contract**: The contract that the _deployer_ delegates to in order to deploy the _CREATE2 factory contract_.
-* **Bootstrapping code**: The critical code in the _bootstrapping contract_ that performs the `CREATE2 (0xf5)` deployment of the _CREATE2 factory contract_.
+- **Deployer**: The account corresponding to `DEPLOYER_PRIVATE_KEY` with address `DEPLOYER_ADDRESS`.
+- **CREATE2 factory contract**: A contract that deploys other contracts with `CREATE2 (0xf5)` opcode, allowing smart contracts to be deployed to deterministic addresses.
+- **Bootstrap contract**: The contract that the _deployer_ delegates to in order to deploy the _CREATE2 factory contract_.
+- **Bootstrapping code**: The critical code in the _bootstrapping contract_ that performs the `CREATE2 (0xf5)` deployment of the _CREATE2 factory contract_.
 
 ### Bootstrap Contract
 
@@ -77,10 +77,10 @@ assembly ("memory-safe") {
 
 The _bootstrap contract_ MAY implement additional features such as:
 
-* Abort early if either _CREATE2 factory contract_ is already deployed or the _deployer_ is not correctly delegated to.
-    * This can help mitigate gas griefing from the previously described front-running issue.
-* Additional verification that the deployment succeeded as expected.
-* Emit events to facilitate tracking of either the _bootstrap contract_ or _CREATE2 factory contract_ deployments.
+- Abort early if either _CREATE2 factory contract_ is already deployed or the _deployer_ is not correctly delegated to.
+  - This can help mitigate gas griefing from the previously described front-running issue.
+- Additional verification that the deployment succeeded as expected.
+- Emit events to facilitate tracking of either the _bootstrap contract_ or _CREATE2 factory contract_ deployments.
 
 ### Deployment Process
 
@@ -108,8 +108,8 @@ One issue with this method is that, because the `DEPLOYER_PRIVATE_KEY` is public
 
 This mechanism allows the `DEPLOYER_ADDRESS` to do any `CREATE2 (0xf5)` deployment, so it would be possible to forgo the intermediary CREATE2 factory contract, and use the deployer technique for all deployments. There are multiple downsides to this, however:
 
-* All contract deployments are subject to the front-running issue described above; which could become an annoyance
-* Concurrent deployments from the deployer are subject to race conditions, since EIP-7702 authorizations increase the account nonce. This means that if two deployments are submitted to the mempool without knowing about each other, only the first one will actually succeed, because the EIP-7702 authorization in the second transaction is for an outdated nonce. This is not an issue when deployers are trying to deploy the same contract as we propose in this ERC, since even if the second delegation and transaction fails, the contract would have been deployed as desired.
+- All contract deployments are subject to the front-running issue described above; which could become an annoyance
+- Concurrent deployments from the deployer are subject to race conditions, since EIP-7702 authorizations increase the account nonce. This means that if two deployments are submitted to the mem-pool without knowing about each other, only the first one will actually succeed, because the EIP-7702 authorization in the second transaction is for an outdated nonce. This is not an issue when deployers are trying to deploy the same contract as we propose in this ERC, since even if the second delegation and transaction fails, the contract would have been deployed as desired.
 
 ### Multiple Transaction Procedure
 
