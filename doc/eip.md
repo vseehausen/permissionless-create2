@@ -1,0 +1,227 @@
+---
+title: Permissionless CREATE2 Factory
+description: Standard deployment parameters for a permissionless CREATE2 factory contract with deterministic address.
+author: Nicholas Rodrigues Lordello (@nlordell)
+discussions-to: <URL>
+status: Draft
+type: Standards Track
+category: ERC
+created: 2025-05-15
+requires: EIP-155, EIP-1014, EIP-7702
+---
+
+## Abstract
+
+This ERC specifies an alternative mechanism and deployment parameters for deploying a permissionless CREATE2 factory contract with deterministic cross-chain address (`0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7`) and code. The deployed contract can then be used to deploy any other contracts to deterministic addresses with the [EIP-1044](./eip-1044.md) `CREATE2 (0xf5)` opcode.
+
+## Motivation
+
+Ensuring that contracts share the same address and code on multiple chains is a hard problem. It is typically done by having a known CREATE2 factory contract at a specific address that can further deploy new contracts using the `CREATE2 (0xf5)` opcode.
+
+However, there is a bootstrapping problem: how do you get a CREATE2 factory contract with specific address and code? There are currently three main approaches to this problem:
+
+1. Use Nick's method to randomly generate a signature for a transaction **without** [EIP-155](./eip-155.md) replay protection that deploys the CREATE2 factory. Nick's method ensures that there is no known private key for account that deploys the CREATE2 factory, meaning that the resulting contract will have deterministic address and code on all chains. This is the strategy used by [Arachnid/deterministic-deployment-proxy](https://github.com/Arachnid/deterministic-deployment-proxy), one of the most widely used CREATE2 factory contracts. However, this method comes with some downsides:
+    * It does not work on chains that only accept EIP-155 replay protected transactions
+    * It is sensitive to changes in gas parameters on the target chain since the gas price in the deployment transaction is sealed, and without a private key a new one cannot be signed
+    * Reverts due to alternative gas schedules make the CREATE2 factory no longer deployable
+2. Keep a carefully guarded secret key, and use it sign transactions to deploy CREATE2 factory contracts. The resulting contract will have a deterministic address and code on all chains where the first transaction of the deployer account is a CREATE2 factory deployment, which can be verified post deployment. This is the strategy used by [safe-global/safe-singleton-factory](https://github.com/safe-global/safe-singleton-factory) and [pcaversaccio/createx](https://github.com/pcaversaccio/createx). This method also has some downsides:
+    * It is permissioned - the party that holds the secret key has the ultimate say on which chains will get the CREATE2 factory deployments
+    * This requires carefully guarding a secret key, if it is exposed or lost, then deployments are no longer guaranteed on new chains
+    * If the first transaction is not a successful CREATE2 factory deployment, than it is no longer possible to have a CREATE2 factory at the common address; this can happen by human error for example
+3. Have popular CREATE2 deployment factories deployed on new chains by default. This is, for example, what OP Stack does as part of their [preinstalls](https://github.com/ethereum-optimism/optimism/blob/develop/packages/contracts-bedrock/src/libraries/Preinstalls.sol) including the CREATE2 factory contracts mentioned above. This ensures that the CREATE2 factory contracts have known address and code. The downsides to this are:
+    * It is not standard and not adopted by all chains
+    * It is permissioned as a chain can choose to not include a needed CREATE2 factory contract preinstalled.
+    * Attempts to standardize this with [RIP-7740](https://github.com/ethereum/RIPs/blob/master/RIPS/rip-7740.md) have not been successful.
+
+This ERC proposes a permissionless alternative to the mechanisms described above with none of their downsides, and standardizes a set of deployment parameters for a unique CREATE2 factory deployment. This ensures a common CREATE2 factory deployment, instead of having multiple competing copies at different addresses. This single copy can be used to bootstrap additional deterministic deployment infrastructure (such as the comprehensive CreateX universal contract deployer).
+
+## Specification
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 and RFC 8174.
+
+### Parameters
+
+| Parameter                   | Value                                                                  |
+| --------------------------- | ---------------------------------------------------------------------- |
+| `DEPLOYER_PRIVATE_KEY`      | `0x942ba639ec667bdded6d727ad2e483648a34b584f916e6b826fdb7b512633731`   |
+| `CREATE2_FACTORY_INIT_CODE` | `0x7860205f3581360380835f375f34f58060145790fd5b5f525ff35f5260196007f3` |
+| `CREATE2_FACTORY_SALT`      | `0xd6f4d577d067a0698ff6db2852c6d9919595eedfe53ad1e3fc85fb469b9bd973`   |
+
+### Derived Parameters
+
+| Derived Parameter              | Value                                                                |
+| ------------------------------ | -------------------------------------------------------------------- |
+| `DEPLOYER_ADDRESS`             | `0x962560A0333190D57009A0aAAB7Bfa088f58461C`                         |
+| `CREATE2_FACTORY_ADDRESS`      | `0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7`                         |
+| `CREATE2_FACTORY_RUNTIME_CODE` | `0x60205f3581360380835f375f34f58060145790fd5b5f525ff3`               |
+| `CREATE2_FACTORY_CODE_HASH`    | `0xf3ee84f262524054463f2deab3d163dd9217d59231bd95b3b39df74b998cda6e` |
+
+### Definitions
+
+* **Deployer**: The account corresponding to `DEPLOYER_PRIVATE_KEY` with address `DEPLOYER_ADDRESS`.
+* **CREATE2 factory contract**: A contract that deploys other contracts with `CREATE2 (0xf5)` opcode, allowing smart contracts to be deployed to deterministic addresses.
+* **Bootstrap contract**: The contract that the _deployer_ delegates to in order to deploy the _CREATE2 factory contract_.
+* **Bootstrapping code**: The critical code in the _bootstrapping contract_ that performs the `CREATE2 (0xf5)` deployment of the _CREATE2 factory contract_.
+
+### Bootstrap Contract
+
+The _bootstrap contract_ MUST execute the following or equivalent _bootstrapping code_ as an [EIP-7702](./eip-7702.md) delegation target for the _deployer_ account:
+
+```solidity
+bytes memory initCode = CREATE2_FACTORY_INIT_CODE;
+bytes32 salt = CREATE2_FACTORY_SALT;
+assembly ("memory-safe") {
+    create2(0, add(initCode, 32), mload(initCode), salt)
+}
+```
+
+The _bootstrap contract_ MAY implement additional features such as:
+
+* Abort early if either _CREATE2 factory contract_ is already deployed or the _deployer_ is not correctly delegated to.
+    * This can help mitigate gas griefing from the previously described front-running issue.
+* Additional verification that the deployment succeeded as expected.
+* Emit events to facilitate tracking of either the _bootstrap contract_ or _CREATE2 factory contract_ deployments.
+
+### Deployment Process
+
+1. Deploy a _bootstrap contract_ described in the previous section.
+2. Sign an EIP-7702 authorization using the `DEPLOYER_PRIVATE_KEY` delegating to the _bootstrap contract_.
+3. Execute an EIP-7702 type `0x4` transaction with the authorization from setup 2; the transaction MUST call `DEPLOYER_ADDRESS` (**either** directly or indirectly) which delegates to the _bootstrap contract_ and MUST perform the `CREATE2 (0xf5)` _bootstrapping code_.
+
+Assuming successful execution of the _bootstrapping code_ without reverting, the _CREATE2 factory contract_ will be deployed to `CREATE2_FACTORY_ADDRESS` with code `CREATE2_FACTORY_RUNTIME_CODE` and code hash `CREATE2_FACTORY_CODE_HASH`.
+
+## Rationale
+
+### Deployment Mechanism
+
+The deployment mechanism was chosen such that it is uniquely parameterized by the `DEPLOYER_ADDRESS` (which itself is derived from the `DEPLOYER_PRIVATE_KEY` and is therefore deterministic), the `CREATE2_FACTORY_INIT_CODE` and the `CREATE2_FACTORY_SALT` which are both fixed and deterministic. Additionally, since the `DEPLOYER_ADDRESS` will deploy the CREATE2 factory contract with the `CREATE2 (0xf5)` opcode, this guarantees that the address and code of the contract are deterministic.
+
+The use of a publicly known private key enables this mechanism, as anyone can permissionlessly generate a delegation signature to **any** contract that would cause the `DEPLOYER_ADDRESS` to execute the specified `CREATE2 (0xf5)` operation and deploy the factory contract to a completely deterministic address.
+
+One issue with this method is that, because the `DEPLOYER_PRIVATE_KEY` is public, anyone can sign alternative delegation or transactions and front-run a legitimate CREATE2 factory deployment. We consider this to not be a serious issue however as:
+
+1. Doing so does not prevent future deployments - meaning that an attacker can only delay the deployment of the CREATE2 factory with a sustained attack at a gas cost to the attacker.
+2. The damage is limited to gas griefing for accounts that are legitimately trying to deploy the CREATE2 factory contract. Furthermore, the reference implementation was coded in a such a way to minimize the gas griefing damage.
+3. In the case of a very persistent malicious actor, their attack can be circumvented by either making use of private transactions or working directly with block builders.
+
+### Use of CREATE2 Factory Contract
+
+This mechanism allows the `DEPLOYER_ADDRESS` to do any `CREATE2 (0xf5)` deployment, so it would be possible to forgo the intermediary CREATE2 factory contract, and use the deployer technique for all deployments. There are multiple downsides to this, however:
+
+* All contract deployments are subject to the front-running issue described above; which could become an annoyance
+* Concurrent deployments from the deployer are subject to race conditions, since EIP-7702 authorizations increase the account nonce. This means that if two deployments are submitted to the mempool without knowing about each other, only the first one will actually succeed, because the EIP-7702 authorization in the second transaction is for an outdated nonce. This is not an issue when deployers are trying to deploy the same contract as we propose in this ERC, since even if the second delegation and transaction fails, the contract would have been deployed as desired.
+
+### Multiple Transaction Procedure
+
+Unfortunately, EIP-7702 type `0x4` transactions are restricted to `to` values that are not `null`, meaning that you cannot simultaneously deploy the _bootstrap contract_ and delegate to it in a single transaction.
+
+### Choice of Deployer Private Key
+
+The `DEPLOYER_PRIVATE_KEY` was chosen as the private key at derivation path `m/44'/60'/0'/0/0` for the mnemonic `make code code code code code code code code code code coconut`.
+
+### Choice of Salt
+
+The `CREATE2_FACTORY_SALT` was chosen so that the CREATE2 factory address starts with `0xC0DE...` prefix.
+
+### CREATE2 Factory Bytecode
+
+The CREATE2 factory has a similar interface to existing implementations. Namely, it accepts `salt || init_code` as input, that is a 32-byte `salt` value concatenated with the `init_code` of the contract to deploy. It will execute a `CREATE2` with the specified `salt` and `init_code`, deploying a contract with `init_code` to `keccak256(0xff || CREATE2_FACTORY_ADDRESS || salt ++ keccak256(init_code))[12:]`.
+
+Note that this contract returns the address of the created contract padded to 32 bytes. This differs from existing implementations, but was done to maintain consistency with the 32-byte word size on the EVM (same encoding as `ecrecover` precompile for example). A product of this is that the return data from CREATE2 factory is compatible with the Solidity ABI.
+
+The `CREATE2_FACTORY_INIT_CODE` corresponds to the following assembly:
+
+```
+### Constructor Code ###
+
+0x0000: PUSH25 0x60205f3581360380835f375f34f5806014575ffd5b5f525ff3
+                        # Stack: [runcode]                      | Push the CREATE2 factory runtime code
+0x001a: PUSH0           # Stack: [0; runcode]                   | Push the offset in memory to store the code
+0x001b: MSTORE          # Stack: []                             | The runtime code is now in `memory[7:32]`
+0x001c: PUSH1 25        # Stack: [25]                           | Push the code length
+0x001e: PUSH1 7         # Stack: [7; 25]                        | Push the memory offset of the start of code
+0x0020: RETURN          # Stack: []                             | Return the runtime code
+```
+
+The `CREATE2_FACTORY_RUNTIME_CODE` corresponds to the following assembly:
+
+```
+### Runtime Code ###
+
+# Push a useful value onto the stack: 32 - this allows us to save a couple bytes
+# of code by using a 1-byte `DUP*` instead of a 2-byte `PUSH1 0x20`.
+0x0000: PUSH1 32
+
+# First, load the salt value and compute the actual code size for the CREATE2
+# call, this is the calldata length minus 32 for the salt prefix.
+0x0002: PUSH0           # Stack: [0; 32]                        | Push the calldata offset of the `salt` parameter
+0x0003: CALLDATALOAD    # Stack: [salt; 32]                     | Load the `salt` from calldata
+0x0004: DUP2            # Stack: [32; salt; 32]                 | Push 32 to the stack
+0x0005: CALLDATASIZE    # Stack: [msg.data.len; 32; salt; 32]   | Followed by the calldata length
+0x0006: SUB             # Stack: [code.len; salt; 32]           | Compute `msg.data.length - 32`, which is the length of
+                                                                # the init `code`
+
+# Copy the init code to memory offset 0.
+                        # Stack: [code.len; salt; 32]
+0x0007: DUP1            # Stack: [code.len; code.len; salt; 32] | Duplicate the length of the init code
+0x0008: DUP4            # Stack: [32; code.len; ...]            | Push the offset in calldata of the code, which is 32
+                                                                # as it comes immediately after the 32-byte `salt`; use
+                                                                # the 32 value at the bottom of the stack
+0x0009: PUSH0           # Stack: [0; 32; code.len; ...]         | Push the offset in memory to copy the code to
+0x000a: CALLDATACOPY    # Stack: [code.len; salt; 32]           | Copy the init code, `memory[0:code.len]` contains the
+                                                                # init `code`
+
+# Deploy the contract.
+                        # Stack: [code.len; salt; 32]
+0x000b: PUSH0           # Stack: [0; code.len; salt; 32]        | Push the offset in memory starting of the start of
+                                                                # init `code`, which is 0
+0x000c: CALLVALUE       # Stack: [v; 0; code.len; salt; 32]     | Forward the call value to the contract constructor
+0x000d: CREATE2         # Stack: [address; 32]                  | Do `create2(v, code, salt)`, which leaves the address
+                                                                # of the contract on the stack, or 0 if the contract
+                                                                # creation reverted
+
+# Verify the deployment was successful and return the address.
+                        # Stack: [address; 32]
+0x000e: DUP1            # Stack: [address; address; 32]         | Duplicate the address value
+0x000f: PUSH1 0x19      # Stack: [0x19; address; address; 32]   | Push the jump destination offset for the code which
+                                                                # handles successful deployments
+0x0011: JUMPI           # Stack: [address; 32]                  | Jump if `address != 0`, i.e. `CREATE2` succeeded
+
+# CREATE2 reverted.
+                        # Stack: [address = 0; 32]
+0x0012: SWAP1           # Stack: [32; 0]                        | Swap the stack elements
+0x0013: REVERT          # Stack: []                             | Revert with empty data `memory[32:32]`
+
+# CREATE2 succeeded.
+0x0014: JUMPDEST        # Stack: [address; 32]
+0x0015: PUSH0           # Stack: [0; address; 32]               | Push the memory offset to store return data at
+0x0016: MSTORE          # Stack: [32]                           | Store the address in memory, `memory[0:32]` contains
+                                                                # the `address` left padded to 32-bytes
+0x0017: PUSH0           # Stack: [0; 32]                        | Push the offset in memory of the return data (0)
+0x0018: RETURN          # Stack: []                             | Return `memory[0:0x20]`, i.e. the address
+```
+
+## Backwards Compatibility
+
+There are a few backwards compatibility considerations with the new proposal:
+
+1. It requires an EVM chain with EIP-7702 enabled.
+2. It would deploy yet another CREATE2 factory contract that would need to be adopted by tooling.
+3. The proposed CREATE2 factory implementation returns the newly created contract address padded to 32 bytes. This is different to some existing contracts that return unpadded 20-byte address value.
+
+## Reference Implementation
+
+We include a reference implementation of a bootstrapping contract that the deployer account can delegate to:
+
+```solidity
+// SPDX-License-Identifier: CC0
+
+```
+
+## Security Considerations
+
+It is possible to front-run transactions that invalidate the deployer's EIP-7702 delegation and cause the deployment to fail. This, however, comes at a gas cost to the attacker, with limited benefit beyond delaying the deployment of the CREATE2 factory. Additionally, persistent attackers can be circumvented by either using private transaction queues or working with block builders directly to ensure that the EIP-7702 bootstrapping transaction is not front-run.
+
+## Copyright
+
+Copyright and related rights waived via [CC0](../LICENSE.md).

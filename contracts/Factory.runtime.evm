@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: GPL-3.0-only
+
+### CREATE2 Factory Runtime Code
+# The CREATE2 factory expects calldata to be a 32-byte CREATE2 salt value
+# followed by the contract init code.
+
+  # Push a useful value onto the stack: 32.
+  push 32
+
+  # First, load the salt value and compute the actual code size for the CREATE2
+  # call, this is the calldata length minus 32 for the salt prefix.
+  ## STACK: [ 32 ]
+  push 0
+  calldataload
+  dup %2
+  calldatasize
+  sub
+
+  # Copy the init code to memory offset 0.
+  ## STACK: [ (calldatasize - 32) ; salt; 32 ]
+  dup %1
+  dup %4
+  push 0
+  calldatacopy
+
+  # Deploy the contract.
+  ## STACK:  [ (calldatasize - 32) ; salt; 32 ]
+  ## MEMORY: [ calldata[32:calldatasize - 32] ]
+  push 0
+  callvalue
+  create2
+
+  # Verify the deployment was successful.
+  ## STACK: [ address; 32 ]
+  dup %1
+  push $(success)
+  jumpi
+
+:revert
+  # Revert if CREATE2 was not successful
+  ## STACK: [ 0; 32 ]
+  swap %1
+  revert
+
+:success
+  # Revert if CREATE2 was not successful
+  ## STACK: [ address; 32 ]
+  jumpdest
+  push 0
+  mstore
+  push 0
+  return

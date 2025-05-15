@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-3.0-only
+
+### CREATE2 Factory Init Code
+# Return the CREATE2 factory untime code.
+
+  push 0x60205f3581360380835f375f34f58060145790fd5b5f525ff3
+  push 0
+  mstore
+  push 25
+  push 7
+  return

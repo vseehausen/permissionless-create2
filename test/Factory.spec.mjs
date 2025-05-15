@@ -25,19 +25,19 @@ describe("Factory", function () {
 
     it("should deploy the CREATE2 factory contract", async function () {
       const factory = await deployFactory(signer);
-
       const code = await ethers.provider.getCode(factory);
+
       expect(ethers.dataLength(code)).to.be.gt(0);
-      expect(ethers.keccak256(code)).to.equal(
-        "0x63c364dbfb4a0583975b3e5695fb053baaafcb090e0e6ae5ec2f436ea33eedbe",
-      );
     });
 
     it("should deploy to the epected address", async function () {
       const factory = await deployFactory(signer);
+      const code = await ethers.provider.getCode(factory);
 
       const constants = await ethers.deployContract("Constants");
       expect(factory).to.equal(await constants.ADDRESS());
+      expect(code).to.equal(await constants.RUNCODE());
+      expect(ethers.keccak256(code)).to.equal(await constants.CODEHASH());
     });
 
     it("should be idempotent", async function () {
@@ -129,6 +129,26 @@ describe("Factory", function () {
       const deployed = await ethers.provider.getCode(address);
 
       expect(ethers.dataLength(deployed)).to.be.gt(0);
+    });
+
+    it("should propagate reverts", async function () {
+      const constants = await ethers.deployContract("Constants");
+      const [signer] = await ethers.getSigners();
+      const tx = await signer.sendTransaction({
+        data: await constants.INITCODE(),
+      });
+      const { contractAddress: factory } = await tx.wait();
+
+      const Revert = await ethers.getContractFactory("Revert");
+      const { data: code } = await Revert.getDeployTransaction();
+      const salt = ethers.randomBytes(32);
+
+      const data = ethers.concat([salt, code]);
+
+      // NOTE: The CREATE2 factory does not propagate the revert data.
+      await expect(
+        signer.call({ to: factory, data }),
+      ).to.be.revertedWithoutReason();
     });
   });
 });
