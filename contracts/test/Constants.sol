@@ -5,7 +5,7 @@ import {Factory} from "../Factory.sol";
 
 contract Constants {
     address public constant DEPLOYER = Factory.DEPLOYER;
-    uint256 public constant SALT = Factory.SALT;
+    bytes32 public constant SALT = Factory.SALT;
     address public constant ADDRESS = Factory.ADDRESS;
     bytes public constant INITCODE = Factory.INITCODE;
     bytes public constant RUNCODE = Factory.RUNCODE;

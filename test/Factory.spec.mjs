@@ -84,7 +84,7 @@ describe("Factory", function () {
 
       expect(await constants.ADDRESS()).to.equal(ethers.getCreate2Address(
         await constants.DEPLOYER(),
-        ethers.toBeHex(await constants.SALT()),
+        await constants.SALT(),
         ethers.keccak256(await constants.INITCODE()),
       ));
 

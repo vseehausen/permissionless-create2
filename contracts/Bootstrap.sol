@@ -39,7 +39,7 @@ contract Bootstrap {
     ///      delegation to this contract.
     function deploy() external {
         bytes memory code = Factory.INITCODE;
-        uint256 salt = Factory.SALT;
+        bytes32 salt = Factory.SALT;
 
         address factory;
         assembly ("memory-safe") {
