@@ -1,6 +1,10 @@
 import { expect } from "chai";
 import hre from "hardhat";
-import { deployFactory } from "../src/index.mjs";
+import {
+  DEPLOYER,
+  deployFactory,
+  signDeployerDelegation,
+} from "../src/index.mjs";
 
 describe("Factory", function () {
   const { ethers, network } = hre;
@@ -28,6 +32,36 @@ describe("Factory", function () {
       const code = await ethers.provider.getCode(factory);
 
       expect(ethers.dataLength(code)).to.be.gt(0);
+    });
+
+    // This test is only useful if we are in a known initial empty state. This
+    // is impractical with `localhost` node, so keep this test around until
+    // Hardhat with `hardhat-ethers` supports EIP-7702 transactions. This test
+    // can be manually run by `s/skip/only/` and running against a blank local
+    // development node.
+    it.skip("should re-delegate the deployer", async function () {
+      const delegate = await ethers.deployContract("Delegate", signer);
+      await delegate.deploymentTransaction().wait();
+
+      await expect(
+        deployFactory(signer, { bootstrap: await delegate.getAddress() }),
+      ).to.be.rejected;
+
+      const message = await delegate.attach(DEPLOYER).echo("hello");
+
+      expect(message).to.equal("hello");
+
+      const constants = await ethers.deployContract("Constants");
+      let factory = await constants.ADDRESS();
+      let code = await ethers.provider.getCode(factory);
+
+      expect(code).to.equal("0x");
+
+      factory = await deployFactory(signer);
+      code = await ethers.provider.getCode(factory);
+
+      expect(factory).to.equal(await constants.ADDRESS());
+      expect(code).to.equal(await constants.RUNCODE());
     });
 
     it("should deploy to the epected address", async function () {

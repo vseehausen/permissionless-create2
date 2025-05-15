@@ -4,9 +4,9 @@ import BOOTSTRAP from "../build/hardhat/artifacts/contracts/Bootstrap.sol/Bootst
 export const MNEMONIC =
   "make code code code code code code code code code code coconut";
 
-const DEPLOYER = "0x962560A0333190D57009A0aAAB7Bfa088f58461C";
-const FACTORY = "0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7";
-const RUNCODE = "0x60205f3581360380835f375f34f58060145790fd5b5f525ff3";
+export const DEPLOYER = "0x962560A0333190D57009A0aAAB7Bfa088f58461C";
+export const FACTORY = "0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7";
+export const RUNCODE = "0x60205f3581360380835f375f34f58060145790fd5b5f525ff3";
 
 export async function deployFactory(
   signer,
@@ -52,7 +52,7 @@ export async function deployFactory(
   return FACTORY;
 }
 
-function signDeployerDelegation({ chainId, address, nonce }) {
+export function signDeployerDelegation({ chainId, address, nonce }) {
   const deployer = ethers.Wallet.fromPhrase(MNEMONIC);
   const message = ethers.concat([
     "0x05", // MAGIC
