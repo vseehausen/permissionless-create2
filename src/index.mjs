@@ -1,7 +1,5 @@
 import { ethers } from "ethers";
-import BOOTSTRAP from "../build/hardhat/artifacts/contracts/Bootstrap.sol/Bootstrap.json" with {
-  type: "json",
-};
+import BOOTSTRAP from "../build/hardhat/artifacts/contracts/Bootstrap.sol/Bootstrap.json" with { type: "json" };
 
 export const MNEMONIC =
   "make code code code code code code code code code code coconut";

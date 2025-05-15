@@ -6,7 +6,7 @@
     "test": "hardhat test"
   },
   "author": "cc0x Research <research@cc0x.dev>",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "hardhat": "^2.24.0"

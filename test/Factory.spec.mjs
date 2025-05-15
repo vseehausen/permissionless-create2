@@ -63,11 +63,9 @@ describe("Factory", function () {
         await signer.call({ to: factory, data }),
       );
 
-      expect(address).to.equal(ethers.getCreate2Address(
-        factory,
-        salt,
-        ethers.keccak256(code),
-      ));
+      expect(address).to.equal(
+        ethers.getCreate2Address(factory, salt, ethers.keccak256(code)),
+      );
       expect(await ethers.provider.getCode(address)).to.equal("0x");
 
       const create = await signer.sendTransaction({ to: factory, data });
@@ -82,14 +80,18 @@ describe("Factory", function () {
     it("should have correct constants", async function () {
       const constants = await ethers.deployContract("Constants");
 
-      expect(await constants.ADDRESS()).to.equal(ethers.getCreate2Address(
-        await constants.DEPLOYER(),
-        await constants.SALT(),
-        ethers.keccak256(await constants.INITCODE()),
-      ));
+      expect(await constants.ADDRESS()).to.equal(
+        ethers.getCreate2Address(
+          await constants.DEPLOYER(),
+          await constants.SALT(),
+          ethers.keccak256(await constants.INITCODE()),
+        ),
+      );
 
       const [signer] = await ethers.getSigners();
-      const tx = await signer.sendTransaction({ data: await constants.INITCODE() });
+      const tx = await signer.sendTransaction({
+        data: await constants.INITCODE(),
+      });
       const { contractAddress: factory } = await tx.wait();
       const code = await ethers.provider.getCode(factory);
 
@@ -102,7 +104,9 @@ describe("Factory", function () {
     it("should allow CREATE2 deployments of contracts", async function () {
       const constants = await ethers.deployContract("Constants");
       const [signer] = await ethers.getSigners();
-      const tx = await signer.sendTransaction({ data: await constants.INITCODE() });
+      const tx = await signer.sendTransaction({
+        data: await constants.INITCODE(),
+      });
       const { contractAddress: factory } = await tx.wait();
 
       const Bootstrap = await ethers.getContractFactory("Bootstrap");
@@ -115,11 +119,9 @@ describe("Factory", function () {
         await signer.call({ to: factory, data }),
       );
 
-      expect(address).to.equal(ethers.getCreate2Address(
-        factory,
-        salt,
-        ethers.keccak256(code),
-      ));
+      expect(address).to.equal(
+        ethers.getCreate2Address(factory, salt, ethers.keccak256(code)),
+      );
       expect(await ethers.provider.getCode(address)).to.equal("0x");
 
       const create = await signer.sendTransaction({ to: factory, data });
