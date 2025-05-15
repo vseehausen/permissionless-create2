@@ -1,0 +1,17 @@
+{
+  "name": "@cc0x-research/permissionless-create2",
+  "version": "1.0.0",
+  "description": "Permissionless CREATE2 Factory Deployment",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "cc0x Research <research@cc0x.dev>",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.24.0"
+  },
+  "dependencies": {
+    "ethers": "^6.14.0"
+  }
+}
