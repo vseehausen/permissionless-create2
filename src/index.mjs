@@ -38,7 +38,7 @@ export async function deployFactory(
     nonce,
   });
 
-  const tx = await bootstrap.bootstrap({ authorizationList: [authorization] });
+  const tx = await bootstrap.deploy({ authorizationList: [authorization] });
   const receipt = await tx.wait();
 
   code = await signer.provider.getCode(FACTORY);

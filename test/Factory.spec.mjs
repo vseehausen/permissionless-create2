@@ -47,7 +47,7 @@ describe("Factory", function () {
       expect(factory1).to.equal(factory2);
 
       const bootstrap = await ethers.deployContract("Bootstrap");
-      await expect(bootstrap.bootstrap()).to.not.be.reverted;
+      await expect(bootstrap.deploy()).to.not.be.reverted;
     });
 
     it("should allow CREATE2 deployments of contracts", async function () {

@@ -11,7 +11,7 @@ contract Bootstrap {
     bytes32 private immutable _DELEGATION;
 
     error InvalidDelegation();
-    error UnexpectedFactoryAddress(address factory);
+    error CreationFailed();
 
     constructor() {
         bytes32 delegation;
@@ -24,28 +24,28 @@ contract Bootstrap {
         _DELEGATION = delegation;
     }
 
-    /// @notice Bootstrap the deployment of the CREATE factory contract.
-    function bootstrap() external {
+    /// @notice Deploy the CREATE factory contract.
+    function deploy() external {
         if (Factory.ADDRESS.codehash == Factory.CODEHASH) {
             return;
         }
 
         require(Factory.DEPLOYER.codehash == _DELEGATION, InvalidDelegation());
-        Bootstrap(Factory.DEPLOYER).deploy();
+        Bootstrap(Factory.DEPLOYER).bootstrap();
     }
 
-    /// @notice Deploy the CREATE2 factory contract.
+    /// @notice Bootstrap the CREATE2 factory contract deployment.
     /// @dev This must be called from {Factory.DEPLOYER} using an EIP-7702
     ///      delegation to this contract.
-    function deploy() external {
+    function bootstrap() external {
         bytes memory code = Factory.INITCODE;
         bytes32 salt = Factory.SALT;
 
         address factory;
         assembly ("memory-safe") {
-            factory := create2(0, add(0x20, code), mload(code), salt)
+            factory := create2(0, add(code, 0x20), mload(code), salt)
         }
 
-        require(factory == Factory.ADDRESS, UnexpectedFactoryAddress(factory));
+        require(factory == Factory.ADDRESS, CreationFailed());
     }
 }
