@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Permissionless CREATE2 Factory Deployment",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "hardhat test"
   },
   "author": "cc0x Research <research@cc0x.dev>",
   "license": "MIT",

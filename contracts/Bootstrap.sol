@@ -8,7 +8,7 @@ import {Factory} from "./Factory.sol";
 ///      deployer account used to bootstrap the deployment of the permissionless
 ///      CREATE2 factory.
 contract Bootstrap {
-    bytes32 immutable private _DELEGATION;
+    bytes32 private immutable _DELEGATION;
 
     error InvalidDelegation();
     error UnexpectedFactoryAddress(address factory);
@@ -26,8 +26,12 @@ contract Bootstrap {
 
     /// @notice Bootstrap the deployment of the CREATE factory contract.
     function bootstrap() external {
-        require(_DEPLOYER.codehash == _DELEGATION, InvalidDelegation());
-        Bootstrap(_DEPLOYER).deploy()
+        if (Factory.ADDRESS.codehash == Factory.CODEHASH) {
+            return;
+        }
+
+        require(Factory.DEPLOYER.codehash == _DELEGATION, InvalidDelegation());
+        Bootstrap(Factory.DEPLOYER).deploy();
     }
 
     /// @notice Deploy the CREATE2 factory contract.
@@ -39,7 +43,7 @@ contract Bootstrap {
 
         address factory;
         assembly ("memory-safe") {
-            create2(0, add(0x20, code), mload(code), _SALT)
+            factory := create2(0, add(0x20, code), mload(code), salt)
         }
 
         require(factory == Factory.ADDRESS, UnexpectedFactoryAddress(factory));

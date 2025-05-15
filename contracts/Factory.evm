@@ -38,7 +38,7 @@
   # Verify the deployment was successful and return the address.
   ## STACK: [ address ]
   dup %1
-  push $(success)
+  push $(success - code)
   jumpi
 :revert
   ## STACK: [ 0 ]
