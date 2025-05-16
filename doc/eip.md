@@ -183,7 +183,7 @@ The `CREATE2_FACTORY_RUNTIME_CODE` corresponds to the following assembly:
 # Verify the deployment was successful and return the address.
                         # Stack: [address; 32]
 0x000e: DUP1            # Stack: [address; address; 32]         | Duplicate the address value
-0x000f: PUSH1 0x19      # Stack: [0x19; address; address; 32]   | Push the jump destination offset for the code which
+0x000f: PUSH1 0x14      # Stack: [0x0014; address; address; 32] | Push the jump destination offset for the code which
                                                                 # handles successful deployments
 0x0011: JUMPI           # Stack: [address; 32]                  | Jump if `address != 0`, i.e. `CREATE2` succeeded
 
