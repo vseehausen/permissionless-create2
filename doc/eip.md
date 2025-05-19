@@ -12,7 +12,7 @@ requires: EIP-155, EIP-1014, EIP-7702
 
 ## Abstract
 
-This ERC specifies an alternative mechanism and deployment parameters for a permissionless CREATE2 factory contract with deterministic cross-chain address (`0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7`) and code. The deployed contract can then be used to deploy any other contracts to deterministic addresses with the [EIP-1044](./eip-1044.md) `CREATE2 (0xf5)` opcode.
+This ERC specifies an alternative mechanism and deployment parameters for a permissionless CREATE2 factory contract with deterministic cross-chain address (`0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7`) and code. The deployed contract can then be used to deploy any other contracts to deterministic addresses by leveraging the [EIP-1044](./eip-1044.md) `CREATE2 (0xf5)` opcode.
 
 ## Motivation
 
@@ -33,7 +33,7 @@ However, there is a bootstrapping problem: how do you get a CREATE2 factory cont
    - It is permissioned as a chain can choose to not include a specific CREATE2 factory contract preinstalled.
    - Attempts to standardize this with [RIP-7740](https://github.com/ethereum/RIPs/blob/master/RIPS/rip-7740.md) have not been successful.
 
-This ERC proposes a permissionless alternative to the mechanisms described above with none of their downsides. Additionally, it standardizes a set of deployment parameters for a **unique** CREATE2 factory deployment. This ensures a common CREATE2 factory for the community, instead of having multiple competing copies at different addresses with slightly different code. This single CREATE2 factory copy can be used to bootstrap additional deterministic deployment infrastructure (such as the aforementioned comprehensive CreateX universal contract deployer).
+This ERC proposes a permissionless alternative fourth mechanisms to the existing ones described above with none of their downsides. Additionally, it standardizes a set of deployment parameters for a **unique** CREATE2 factory deployment. This ensures a common CREATE2 factory for the community, instead of having multiple competing copies at different addresses with slightly different code. This single CREATE2 factory copy can be used to bootstrap additional deterministic deployment infrastructure (such as the aforementioned comprehensive CreateX universal contract deployer).
 
 ## Specification
 
@@ -127,7 +127,7 @@ The `CREATE2_FACTORY_SALT` was chosen so that the CREATE2 factory address starts
 
 The CREATE2 factory has a similar interface to existing implementations. Namely, it accepts `salt || init_code` as input, that is a 32-byte `salt` value concatenated with the `init_code` of the contract to deploy. It will execute a `CREATE2` with the specified `salt` and `init_code`, deploying a contract with `init_code` to `keccak256(0xff || CREATE2_FACTORY_ADDRESS || salt ++ keccak256(init_code))[12:]`.
 
-Note that this contract returns the address of the created contract padded to 32 bytes. This differs from existing implementations, but was done to maintain consistency with the 32-byte word size on the EVM (same encoding as `ecrecover` precompile for example). A product of this is that the return data from CREATE2 factory is compatible with the Solidity ABI.
+Note that this contract returns the address of the created contract padded to 32 bytes. This differs from some existing implementations, but was done to maintain consistency with the 32-byte word size on the EVM (same encoding as `ecrecover` precompile for example). A product of this is that the return data from CREATE2 factory is compatible with the Solidity ABI.
 
 The `CREATE2_FACTORY_INIT_CODE` corresponds to the following assembly:
 
@@ -215,12 +215,12 @@ Additionally, if new EVM opcodes or transactions are introduced in the future th
 
 If this ERC would gain sufficient adoption, then this may not be an issue as:
 
-- The deployment on Ethereum layer 1 would already exist, and the `DEPLOYER_PRIVATE_KEY` would no longer have any value.
+- The deployment on Ethereum Mainnet would already exist, and the `DEPLOYER_PRIVATE_KEY` would no longer have any value on Ethereum Mainnet.
 - An RIP can be adopted to ensure that `CREATE2_FACTORY_ADDRESS` has code `CREATE2_FACTORY_RUNTIME_CODE`.
 
 ## Reference Implementation
 
-We include a reference implementation of a bootstrap contract that the deployer account can delegate to. The reference implementation expects a call to `Bootstrap` to the function `deploy()` in an EIP-7702 type `0x4` transaction including the EIP-7702 authorization delegating `DEPLOYER_ADDRESS` to `Bootstrap` (NOTE: the `Bootstrap` is called as an entry point, instead of calling `DEPLOYER_ADDRESS` directly which allows the contract to do some up-front checks in order to minimize gas griefing):
+We include a reference implementation of a bootstrap contract that the deployer account can delegate to. The reference implementation expects a call to `Bootstrap` to the function `deploy()` in an EIP-7702 type `0x4` transaction including the EIP-7702 authorization delegating `DEPLOYER_ADDRESS` to `Bootstrap` (NOTE: the `Bootstrap` is called as an entry point, instead of calling `DEPLOYER_ADDRESS` directly which allows the contract to do some up-front checks in order to minimize gas griefing risk):
 
 ```solidity
 // SPDX-License-Identifier: CC0
