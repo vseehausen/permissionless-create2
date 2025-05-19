@@ -12,7 +12,7 @@ requires: EIP-155, EIP-1014, EIP-7702
 
 ## Abstract
 
-This ERC specifies an alternative mechanism and deployment parameters for a permissionless CREATE2 factory contract with deterministic cross-chain address (`0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7`) and code. The deployed contract can then be used to deploy any other contracts to deterministic addresses by leveraging the [EIP-1014](./eip-1014.md) `CREATE2 (0xf5)` opcode.
+This ERC specifies an alternative mechanism and deployment parameters for a permissionless CREATE2 factory contract with deterministic cross-chain address (`0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7`) and code. The deployed contract can then be used to deploy any other contracts to deterministic addresses by leveraging the [EIP-1014](./eip-1014.md) `CREATE2 (0xf5)` opcode and the [EIP-7702](./eip-7702.md) `Set Code for EOAs` transaction type.
 
 ## Motivation
 
