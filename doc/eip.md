@@ -1,18 +1,18 @@
 ---
 title: Permissionless CREATE2 Factory
 description: Standard deployment parameters for a permissionless CREATE2 factory contract with deterministic address.
-author: Nicholas Rodrigues Lordello (@nlordell)
+author: Nicholas Rodrigues Lordello (@nlordell), Richard Meissner (@rmeissner)
 discussions-to: <URL>
 status: Draft
 type: Standards Track
 category: ERC
 created: 2025-05-15
-requires: EIP-155, EIP-1014, EIP-7702
+requires: EIP-1014, EIP-7702
 ---
 
 ## Abstract
 
-This ERC specifies an alternative mechanism and deployment parameters for a permissionless CREATE2 factory contract with deterministic cross-chain address (`0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7`) and code. The deployed contract can then be used to deploy any other contracts to deterministic addresses by leveraging the [EIP-1044](./eip-1044.md) `CREATE2 (0xf5)` opcode.
+This ERC specifies an alternative mechanism using the [EIP-7702](./eip-7702.md) `Set Code for EOAs (0x4)` transaction type as well as deployment parameters for a permissionless CREATE2 factory contract with deterministic cross-chain address (`0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7`) and code. The deployed contract can then be used to deploy any other contracts to deterministic addresses by leveraging the [EIP-1014](./eip-1014.md) `CREATE2 (0xf5)` opcode.
 
 ## Motivation
 
@@ -198,7 +198,7 @@ The `CREATE2_FACTORY_RUNTIME_CODE` corresponds to the following assembly:
 0x0016: MSTORE          # Stack: [32]                           | Store the address in memory, `memory[0:32]` contains
                                                                 # the `address` left padded to 32-bytes
 0x0017: PUSH0           # Stack: [0; 32]                        | Push the offset in memory of the return data (0)
-0x0018: RETURN          # Stack: []                             | Return `memory[0:0x20]`, i.e. the address
+0x0018: RETURN          # Stack: []                             | Return `memory[0:32]`, i.e. the address
 ```
 
 ## Backwards Compatibility
