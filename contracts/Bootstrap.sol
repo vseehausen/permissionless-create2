@@ -3,7 +3,7 @@ pragma solidity 0.8.29;
 
 import {Factory} from "./Factory.sol";
 
-/// @title Permissionless CREATE Bootstrap Contract
+/// @title Permissionless CREATE2 Bootstrap Contract
 /// @dev This contract is the EIP-7702 delegation target for the designated
 ///      deployer account used to bootstrap the deployment of the permissionless
 ///      CREATE2 factory.
