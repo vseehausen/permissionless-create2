@@ -1,13 +1,13 @@
 ---
 title: Permissionless CREATE2 Factory
 description: Standard deployment parameters for a permissionless CREATE2 factory contract with deterministic address.
-author: Nicholas Rodrigues Lordello (@nlordell)
+author: Nicholas Rodrigues Lordello (@nlordell), Richard Meissner (@rmeissner)
 discussions-to: <URL>
 status: Draft
 type: Standards Track
 category: ERC
 created: 2025-05-15
-requires: EIP-155, EIP-1014, EIP-7702
+requires: EIP-1014, EIP-7702
 ---
 
 ## Abstract
