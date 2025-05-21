@@ -121,7 +121,7 @@ The `DEPLOYER_PRIVATE_KEY` was chosen as the private key at derivation path `m/4
 
 ### Choice of Salt
 
-The `CREATE2_FACTORY_SALT` was chosen as the **first** salt value starting from `0` such that the CREATE2 factory [ERC-55](./eip-55.md) checksum address starts with the `0xC0DE...` prefix. A verifiable method for mining a vanity address for the CREATE2 factory contract was chosen in order to ensure that the ERC authors did not find a CREATE2 hash collision on the `CREATE2_FACTORY_ADDRESS` that they can exploit at some point in the future.
+The `CREATE2_FACTORY_SALT` was chosen as the **first** salt value starting from `0` such that the CREATE2 factory's [ERC-55](./eip-55.md) checksum address starts with the case sensitive `0xC0DE...` prefix. A verifiable method for mining a vanity address for the CREATE2 factory contract was chosen in order to ensure that the ERC authors did not find a CREATE2 hash collision on the `CREATE2_FACTORY_ADDRESS` that they can exploit at some point in the future.
 
 ### CREATE2 Factory Bytecode
 
