@@ -133,9 +133,8 @@ describe("Factory", function () {
       expect(await constants.CODEHASH()).to.equal(ethers.keccak256(code));
     });
 
-    it("should be a verifiably computed salt", async function () {
-      // This test takes a long time to run, so skip it by default.
-      this.skip();
+    // This test takes a long time to run, so skip it by default.
+    it.skip("should be a verifiably computed salt", async function () {
       this.timeout(120000);
 
       const constants = await ethers.deployContract("Constants");
