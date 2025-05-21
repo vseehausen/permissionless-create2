@@ -12,7 +12,7 @@ requires: EIP-1014, EIP-7702
 
 ## Abstract
 
-This ERC specifies an alternative mechanism using the [EIP-7702](./eip-7702.md) `Set Code for EOAs (0x4)` transaction type as well as deployment parameters for a permissionless CREATE2 factory contract with deterministic cross-chain address (`0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7`) and code. The deployed contract can then be used to deploy any other contracts to deterministic addresses by leveraging the [EIP-1014](./eip-1014.md) `CREATE2 (0xf5)` opcode.
+This ERC specifies an alternative mechanism using the [EIP-7702](./eip-7702.md) `Set Code for EOAs (0x4)` transaction type as well as deployment parameters for a permissionless CREATE2 factory contract with deterministic cross-chain address (`0xC0DE8E984dF1846E6AdE500972641ce0a9669e1b`) and code. The deployed contract can then be used to deploy any other contracts to deterministic addresses by leveraging the [EIP-1014](./eip-1014.md) `CREATE2 (0xf5)` opcode.
 
 ## Motivation
 
@@ -45,14 +45,14 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 | --------------------------- | ---------------------------------------------------------------------- |
 | `DEPLOYER_PRIVATE_KEY`      | `0x942ba639ec667bdded6d727ad2e483648a34b584f916e6b826fdb7b512633731`   |
 | `CREATE2_FACTORY_INIT_CODE` | `0x7860205f3581360380835f375f34f58060145790fd5b5f525ff35f5260196007f3` |
-| `CREATE2_FACTORY_SALT`      | `0xd6f4d577d067a0698ff6db2852c6d9919595eedfe53ad1e3fc85fb469b9bd973`   |
+| `CREATE2_FACTORY_SALT`      | `0x0000000000000000000000000000000000000000000000000000000000057a67`   |
 
 ### Derived Parameters
 
 | Derived Parameter              | Value                                                                |
 | ------------------------------ | -------------------------------------------------------------------- |
 | `DEPLOYER_ADDRESS`             | `0x962560A0333190D57009A0aAAB7Bfa088f58461C`                         |
-| `CREATE2_FACTORY_ADDRESS`      | `0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7`                         |
+| `CREATE2_FACTORY_ADDRESS`      | `0xC0DE8E984dF1846E6AdE500972641ce0a9669e1b`                         |
 | `CREATE2_FACTORY_RUNTIME_CODE` | `0x60205f3581360380835f375f34f58060145790fd5b5f525ff3`               |
 | `CREATE2_FACTORY_CODE_HASH`    | `0xf3ee84f262524054463f2deab3d163dd9217d59231bd95b3b39df74b998cda6e` |
 
@@ -121,7 +121,7 @@ The `DEPLOYER_PRIVATE_KEY` was chosen as the private key at derivation path `m/4
 
 ### Choice of Salt
 
-The `CREATE2_FACTORY_SALT` was chosen so that the CREATE2 factory address starts with `0xC0DE...` prefix.
+The `CREATE2_FACTORY_SALT` was chosen as the **first** salt value starting from `0` such that the CREATE2 factory [ERC-55](./eip-55.md) checksum address starts with the `0xC0DE...` prefix. A verifiable method for mining a vanity address for the CREATE2 factory contract was chosen in order to ensure that the ERC authors did not find a CREATE2 hash collision on the `CREATE2_FACTORY_ADDRESS` that they can exploit at some point in the future.
 
 ### CREATE2 Factory Bytecode
 
@@ -228,10 +228,10 @@ pragma solidity ^0.8.29;
 
 contract Bootstrap {
     address private constant _DEPLOYER_ADDRESS = 0x962560A0333190D57009A0aAAB7Bfa088f58461C;
-    address private constant _CREATE2_FACTORY_ADDRESS = 0xC0DE207acb0888c5409E51F27390Dad75e4ECbe7;
+    address private constant _CREATE2_FACTORY_ADDRESS = 0xC0DE8E984dF1846E6AdE500972641ce0a9669e1b;
     bytes32 private constant _CREATE2_FACTORY_CODE_HASH = hex"f3ee84f262524054463f2deab3d163dd9217d59231bd95b3b39df74b998cda6e";
     bytes private constant _CREATE2_FACTORY_INIT_CODE = hex"7860205f3581360380835f375f34f58060145790fd5b5f525ff35f5260196007f3";
-    bytes32 private constant _CREATE2_FACTORY_SALT = hex"d6f4d577d067a0698ff6db2852c6d9919595eedfe53ad1e3fc85fb469b9bd973";
+    bytes32 private constant _CREATE2_FACTORY_SALT = hex"0000000000000000000000000000000000000000000000000000000000057a67";
 
     error InvalidDelegation();
     error CreationFailed();
@@ -269,7 +269,7 @@ pragma solidity ^0.8.29;
 
 contract MiniBootstrap {
     bytes private constant _CREATE2_FACTORY_INIT_CODE = hex"7860205f3581360380835f375f34f58060145790fd5b5f525ff35f5260196007f3";
-    bytes32 private constant _CREATE2_FACTORY_SALT = hex"d6f4d577d067a0698ff6db2852c6d9919595eedfe53ad1e3fc85fb469b9bd973";
+    bytes32 private constant _CREATE2_FACTORY_SALT = hex"0000000000000000000000000000000000000000000000000000000000057a67";
 
     fallback() external {
         bytes memory initCode = _CREATE2_FACTORY_INIT_CODE;

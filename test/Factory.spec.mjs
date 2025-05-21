@@ -132,6 +132,29 @@ describe("Factory", function () {
       expect(await constants.RUNCODE()).to.equal(code);
       expect(await constants.CODEHASH()).to.equal(ethers.keccak256(code));
     });
+
+    it("should be a verifiably computed salt", async function () {
+      // This test takes a long time to run, so skip it by default.
+      this.skip();
+      this.timeout(120000);
+
+      const constants = await ethers.deployContract("Constants");
+
+      const deployer = await constants.DEPLOYER();
+      const initCodeHash = ethers.keccak256(await constants.INITCODE());
+      const expectedSalt = BigInt(await constants.SALT());
+      for (let salt = 0n; salt < ethers.MaxUint256; salt++) {
+        const address = ethers.getCreate2Address(
+          deployer,
+          ethers.toBeHex(salt, 32),
+          initCodeHash,
+        );
+        if (address.startsWith("0xC0DE")) {
+          expect(salt).to.eq(expectedSalt);
+          break;
+        }
+      }
+    });
   });
 
   describe("implementation", function () {
